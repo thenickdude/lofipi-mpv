@@ -1,0 +1,6 @@
+node_modules usr/share/lofipi-mpv/
+package.json usr/share/lofipi-mpv/
+index.mjs usr/share/lofipi-mpv/
+default.conf usr/share/lofipi-mpv/
+pigpio-lofi.conf /etc/systemd/system/pigpiod.service.d/
+src usr/share/lofipi-mpv/

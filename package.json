@@ -1,0 +1,27 @@
+{
+  "name": "lofipi-mpv",
+  "version": "1.0.0",
+  "description": "Play lo-fi beats on the Lofipi from YouTube using mpv",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "contributors": [
+    "Nicholas Shelock (https://nicksherlock.com/)"
+  ],
+  "license": "WTFPLv2",
+  "private": true,
+  "dependencies": {
+    "ini": "^3.0.0",
+    "keypress": "^0.2.1",
+    "node-mpv": "^2.0.0-beta.2",
+    "pigpio-client": "^1.5.2",
+    "random": "^3.0.6",
+    "seedrandom": "^3.0.5"
+  },
+  "type": "module",
+  "files": [
+    "src/*.mjs",
+    "debian/*"
+  ]
+}

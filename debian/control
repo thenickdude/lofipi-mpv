@@ -1,0 +1,8 @@
+Source: lofipi-mpv
+Maintainer: Nicholas Sherlock <n.sherlock@gmail.com>
+Build-Depends: debhelper (>= 11), nodejs (>= 16), libasound2-dev
+
+Package: lofipi-mpv
+Architecture: armhf
+Depends: ${misc:Depends}, nodejs, youtube-dl, mpv
+Description: Lo-fi music streamer

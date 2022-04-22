@@ -1,0 +1,23 @@
+[Unit]
+Description=Lofipi MPV music streamer
+Requires=sound.target
+Requires=pigpiod.service
+After=network-online.target
+After=sound.target
+After=pigpiod.service
+
+[Service]
+DynamicUser=yes
+KillMode=control-group
+SupplementaryGroups=audio
+CacheDirectory=lofipi-mpv
+RuntimeDirectory=lofipi-mpv
+WorkingDirectory=/usr/share/lofipi-mpv
+# So Alsamixer can read .alsaequal.bin from a writable directory:
+Environment=HOME=/run/lofipi-mpv CONFIG_FILE=/etc/lofipi-mpv.conf
+ExecStart=/usr/bin/node index.mjs
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
