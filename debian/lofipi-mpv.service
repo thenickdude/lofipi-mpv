@@ -12,6 +12,7 @@ KillMode=control-group
 SupplementaryGroups=audio
 CacheDirectory=lofipi-mpv
 RuntimeDirectory=lofipi-mpv
+StateDirectory=lofipi-mpv
 WorkingDirectory=/usr/share/lofipi-mpv
 # So Alsamixer can read .alsaequal.bin from a writable directory:
 Environment=HOME=/run/lofipi-mpv CONFIG_FILE=/etc/lofipi-mpv.conf

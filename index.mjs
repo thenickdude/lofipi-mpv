@@ -13,6 +13,7 @@ import Button from "./src/Button.mjs";
 
 const
     RUNTIME_DIRECTORY = process.env.RUNTIME_DIRECTORY,
+    STATE_DIRECTORY = process.env.STATE_DIRECTORY,
     CONFIG_FILE = process.env.CONFIG_FILE;
 
 let
@@ -64,13 +65,18 @@ async function startGPIO(mpvPlayer) {
     const
         fanController = new FanController(pio),
 
-        toneKnob = new CapKnob(pio, 20, reading => {
-            let
-                // Clip the bottom and top 10% off the range to make it easy to reach the limits
-                clippedReading = Math.min(Math.max((reading - 0.1) / 0.8, 0.0), 1.0);
+        toneKnob = new CapKnob(
+            pio,
+            20,
+            reading => {
+                let
+                    // Clip the bottom and top 10% off the range to make it easy to reach the limits
+                    clippedReading = Math.min(Math.max((reading - 0.1) / 0.8, 0.0), 1.0);
 
-            equalizer.loadPreset(lerpIntArrays(eqPresets[0], eqPresets[1], clippedReading));
-        }),
+                equalizer.loadPreset(lerpIntArrays(eqPresets[0], eqPresets[1], clippedReading));
+            },
+            STATE_DIRECTORY && fs.existsSync(STATE_DIRECTORY) ? path.join(STATE_DIRECTORY, "tone-limits") : null
+        ),
 
         playSkip = new Button(pio, 400, longPress => {
             if (longPress) {
