@@ -138,12 +138,12 @@ async function startMPV() {
 
 initEqualizer();
 
-await startMPV();
-
-try {
-    await startGPIO(mpvPlayer);
-} catch (e) {
-    console.error("Failed to start GPIO with pigpio: " + e);
-    console.error("Assuming that this is a system without GPIO, and continuing...");
-}
-
+startMPV()
+    .then(
+        () => startGPIO(mpvPlayer)
+            .catch(e => {
+                console.error("Failed to start GPIO with pigpio: " + e);
+                console.error("Assuming that this is a system without GPIO, and continuing...");
+            })
+    )
+    .catch(e => console.error(e));

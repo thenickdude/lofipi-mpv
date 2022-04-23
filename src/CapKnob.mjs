@@ -1,4 +1,3 @@
-import {setTimeout as setTimeoutPromise} from "timers/promises";
 import fs from "fs";
 
 function median(arr) {
@@ -11,6 +10,10 @@ function median(arr) {
 
 function average(arr) {
     return arr.reduce((acc, val) => acc + val, 0) / arr.length;
+}
+
+function setTimeoutPromise(delay) {
+    return new Promise(resolve => setTimeout(resolve, delay));
 }
 
 const
