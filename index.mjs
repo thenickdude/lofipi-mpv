@@ -131,6 +131,8 @@ async function startMPV() {
         }
     })
 
+    await mpvPlayer.loopPlaylist("inf");
+
     await mpvPlayer.command("loadfile", [config.play_url]);
 
     await mpvPlayer.play();
