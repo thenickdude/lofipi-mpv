@@ -10,6 +10,7 @@ import Equalizer from "./src/Equalizer.mjs";
 import FanController from "./src/FanController.mjs";
 import CapKnob from "./src/CapKnob.mjs";
 import Button from "./src/Button.mjs";
+import TempSensor from "./src/TempSensor.mjs";
 
 const
     RUNTIME_DIRECTORY = process.env.RUNTIME_DIRECTORY,
@@ -63,7 +64,9 @@ async function startGPIO(mpvPlayer) {
     });
 
     const
-        fanController = new FanController(pio),
+        cpuTemperature = new TempSensor(),
+
+        fanController = new FanController(pio, +config.fan_speed, +config.fan_low_speed, +config.fan_high_speed, cpuTemperature),
 
         toneKnob = new CapKnob(
             pio,
@@ -88,14 +91,15 @@ async function startGPIO(mpvPlayer) {
             }
         });
 
-    if (config.fan_pin) {
-        await fanController.start(config.fan_pin | 0, (+config.fan_speed) * 255);
+    if (config.fan_pin && config.fan_pin.trim().length > 0) {
+        await fanController.start(config.fan_pin | 0, +config.fan_speed);
     }
-    if (config.tone_knob_pin) {
+
+    if (config.tone_knob_pin && config.tone_knob_pin.trim().length > 0) {
         await toneKnob.start(config.tone_knob_pin | 0);
     }
 
-    if (config.play_skip_pin) {
+    if (config.play_skip_pin && config.play_skip_pin.trim().length > 0) {
         await playSkip.start(config.play_skip_pin | 0);
     }
 }

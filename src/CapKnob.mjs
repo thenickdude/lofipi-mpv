@@ -50,8 +50,16 @@ export default class CapKnob {
                         .map(line => line.trim())
                         .filter(line => line.length > 0);
 
-                this.min = parseInt(lines[0]);
-                this.max = parseInt(lines[1]);
+                this.min = parseInt(lines[0], 10);
+                this.max = parseInt(lines[1], 10);
+
+                if (Number.isNaN(this.min)) {
+                    this.min = -1;
+                }
+
+                if (Number.isNaN(this.max)) {
+                    this.max = -1;
+                }
 
                 console.log(`Restored knob limits ${this.min} ${this.max}`);
             } catch (e) {
