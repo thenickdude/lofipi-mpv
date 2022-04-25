@@ -1,6 +1,6 @@
 {
   "name": "lofipi-mpv",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Play lo-fi beats on the Lofipi from YouTube using mpv",
   "main": "index.mjs",
   "scripts": {

@@ -1,3 +1,9 @@
+lofipi-mpv (1.1.0-0) unstable; urgency=medium
+
+  * Automatic fan speed control based on CPU temp, loop playlists
+
+ -- Nicholas Sherlock <n.sherlock@gmail.com>  Fri, 25 Apr 2022 19:12:00 +1300
+
 lofipi-mpv (1.0.0-0) UNRELEASED; urgency=medium
 
   * Initial version
