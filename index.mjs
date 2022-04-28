@@ -34,7 +34,10 @@ const
 
     mpvPlayer = new mpv({
         audio_only: true
-    }, ["--audio-device=alsa"].concat(...shuffle ? ["--shuffle"] : []));
+    }, [
+        "--audio-device=alsa",
+        "--script-opts=ytdl_hook-try_ytdl_first=yes",
+    ].concat(...shuffle ? ["--shuffle"] : []));
 
 let
     equalizer;
