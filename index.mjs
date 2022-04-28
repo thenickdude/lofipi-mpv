@@ -53,10 +53,12 @@ function lerpIntArrays(a, b, prop) {
 }
 
 async function startGPIO(mpvPlayer) {
-    const
+    let
         pio = pigpio({
             timeout: 60
-        });
+        }),
+
+        paused = false;
 
     await new Promise((resolve, reject) => {
         pio.once('connected', resolve);
@@ -86,8 +88,18 @@ async function startGPIO(mpvPlayer) {
                 console.log("Skip");
                 mpvPlayer.next();
             } else {
-                console.log("Play/pause");
-                mpvPlayer.togglePause();
+                if (paused) {
+                    console.log("Resume");
+                    mpvPlayer.resume();
+                    toneKnob.resume();
+                    paused = false;
+                } else {
+                    console.log("Pause");
+                    mpvPlayer.pause();
+                    // Reduce idle CPU usage by not polling tone knob while paused:
+                    toneKnob.pause();
+                    paused = true;
+                }
             }
         });
 

@@ -39,7 +39,10 @@ export default class CapKnob {
 
         this.pio = pio;
 
-        this.debounceTimer = null;
+        this._runPromise = Promise.resolve();
+        this._resume = null;
+        this._debounceTimer = null;
+
         this.persistFile = persistFile;
 
         if (persistFile) {
@@ -69,6 +72,23 @@ export default class CapKnob {
         }
     }
 
+    pause() {
+        if (this._resume === null) {
+            this._runPromise = new Promise((resolve) => {
+                // We can call this later to resume sampling:
+                this._resume = resolve;
+            });
+        }
+    }
+
+    resume() {
+        if (this._resume !== null) {
+            this._runPromise = Promise.resolve();
+            this._resume();
+            this._resume = null;
+        }
+    }
+
     async start(pinNumber) {
         let
             potGPIO,
@@ -87,6 +107,7 @@ export default class CapKnob {
                 ])
                     // Allow time to discharge (also serves to rate-limit our measurements)
                     .then(() => setTimeoutPromise(10))
+                    .then(() => this._runPromise)
                     .then(() => {
                         this.pio.getCurrentTick((err, tick) => {
                             // Go high-impedance to start the charge cycle
@@ -116,14 +137,14 @@ export default class CapKnob {
                         this.max = this.max === -1 ? m : Math.max(this.max, m);
 
                         // Do we need to update the saved bounds?
-                        if (!this.debounceTimer && this.persistFile && (Math.abs(this.min - this._savedMin) > BOUNDS_CHANGE_THRESHOLD
+                        if (!this._debounceTimer && this.persistFile && (Math.abs(this.min - this._savedMin) > BOUNDS_CHANGE_THRESHOLD
                                 || Math.abs(this.max - this._savedMax) > BOUNDS_CHANGE_THRESHOLD)) {
                             // Coalesce multiple successive updates by only saving every 10 seconds at maximum
-                            this.debounceTimer = setTimeout(() => {
+                            this._debounceTimer = setTimeout(() => {
                                 fs.writeFileSync(this.persistFile, this.min + "\n" + this.max);
                                 this._savedMin = this.min;
                                 this._savedMax = this.max;
-                                this.debounceTimer = null;
+                                this._debounceTimer = null;
                             }, 10000);
                         }
 
