@@ -72,7 +72,7 @@ async function startGPIO(mpvPlayer) {
 
         toneKnob = new CapKnob(
             pio,
-            20,
+            400,
             reading => {
                 let
                     // Clip the bottom and top 10% off the range to make it easy to reach the limits

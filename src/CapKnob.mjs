@@ -1,11 +1,21 @@
 import fs from "fs";
+import assert from "assert";
 
 function median(arr) {
+    assert(arr.length > 0);
+
     arr = arr.slice(0);
 
     arr.sort((a, b) => a - b);
 
-    return arr[Math.floor(arr.length / 2)];
+    let
+        midpoint = Math.floor(arr.length / 2);
+
+    if (arr.length % 2 === 0) {
+        return (arr[midpoint - 1] + arr[midpoint]) / 2;
+    }
+
+    return arr[midpoint];
 }
 
 function average(arr) {
@@ -17,7 +27,12 @@ function setTimeoutPromise(delay) {
 }
 
 const
-    BOUNDS_CHANGE_THRESHOLD = 200;
+    BOUNDS_CHANGE_THRESHOLD = 200,
+
+    MIN_SAMPLES = 5,
+    MAX_SAMPLES = 51,
+
+    CAP_DISCHARGE_TIME_MS = 10;
 
 /**
  * Implements ADC reading of a potentiometer, using a digital pin, by measuring time taken
@@ -25,7 +40,14 @@ const
  */
 export default class CapKnob {
 
-    constructor(pio, numSamples, onReading, persistFile = null) {
+    /**
+     *
+     * @param pio
+     * @param {number} averagingPeriodMs - Readings will be delivered at this target rate
+     * @param {Function} onReading
+     * @param {?string} persistFile
+     */
+    constructor(pio, averagingPeriodMs, onReading, persistFile = null) {
         this.min = -1;
         this.max = -1;
         this._savedMin = -1;
@@ -34,7 +56,9 @@ export default class CapKnob {
 
         this.onReading = onReading;
 
-        this.buffer = new Array(numSamples);
+        this.averagingPeriodMs = averagingPeriodMs;
+
+        this.buffer = new Array(MIN_SAMPLES);
         this.bufferIndex = 0;
 
         this.pio = pio;
@@ -106,7 +130,7 @@ export default class CapKnob {
                     potGPIO.write(0)
                 ])
                     // Allow time to discharge (also serves to rate-limit our measurements)
-                    .then(() => setTimeoutPromise(10))
+                    .then(() => setTimeoutPromise(CAP_DISCHARGE_TIME_MS))
                     .then(() => this._runPromise)
                     .then(() => {
                         this.pio.getCurrentTick((err, tick) => {
@@ -158,6 +182,9 @@ export default class CapKnob {
                             if (this.max > this.min) {
                                 this.onReading((this.reading - this.min) / (this.max - this.min));
                             }
+
+                            // Adjust our sampling period length for next round
+                            this.buffer.length = Math.min(Math.max(Math.round(this.averagingPeriodMs / (this.reading / 1000 + CAP_DISCHARGE_TIME_MS)), MIN_SAMPLES), MAX_SAMPLES);
                         }
 
                         this.bufferIndex = 0;
