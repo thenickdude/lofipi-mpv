@@ -13,8 +13,8 @@ import Button from "./src/Button.mjs";
 import TempSensor from "./src/TempSensor.mjs";
 
 const
-    RUNTIME_DIRECTORY = process.env.RUNTIME_DIRECTORY,
-    STATE_DIRECTORY = process.env.STATE_DIRECTORY,
+    RUNTIME_DIRECTORY = process.env.RUNTIME_DIRECTORY || "/tmp",
+    STATE_DIRECTORY = process.env.STATE_DIRECTORY || "/tmp",
     CONFIG_FILE = process.env.CONFIG_FILE;
 
 let
@@ -33,7 +33,8 @@ const
     ],
 
     mpvPlayer = new mpv({
-        audio_only: true
+        audio_only: true,
+        socket: path.join(RUNTIME_DIRECTORY, "mpv.sock")
     }, [
         "--audio-device=alsa",
         "--script-opts=ytdl_hook-try_ytdl_first=yes",
@@ -56,6 +57,10 @@ function lerpIntArrays(a, b, prop) {
 }
 
 async function startGPIO(mpvPlayer) {
+    if ((config.skip_gpio | 0) !== 0) {
+        return;
+    }
+
     let
         pio = pigpio({
             timeout: 60
@@ -124,7 +129,7 @@ function initEqualizer() {
      * The alsa equalizer plugin opens the file using mmap with write permissions, so we have
      * to put it in the runtime directory
      */
-    equalizer = new Equalizer(RUNTIME_DIRECTORY && fs.existsSync(RUNTIME_DIRECTORY) ? path.join(RUNTIME_DIRECTORY, ".alsaequal.bin") : null, true);
+    equalizer = new Equalizer(RUNTIME_DIRECTORY && fs.existsSync(RUNTIME_DIRECTORY) && (config.skip_equalizer | 0) === 0 ? path.join(RUNTIME_DIRECTORY, ".alsaequal.bin") : null, true);
 
     // Load EQ presets from config file
     for (let i = 0; i < 2; i++) {
