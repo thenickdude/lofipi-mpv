@@ -46,6 +46,12 @@ export default class Equalizer {
         this.mono = mono;
         this.fd = null;
 
+        // LADSPA_Control defines "long words" in its file format, which are, more or less,
+        // 32 bit on 32-bit OS and 64-bit on 64-bit OS, we need to match this:
+        //
+        // Linking against the alsaequal header file would be a much better solution to this guesswork
+        this.longWords = ['arm64', 'ppc64', 'x64'].indexOf(process.arch) > -1;
+
         if (controlFilename) {
             try {
                 this.fd = fs.openSync(controlFilename, "w");
@@ -62,7 +68,7 @@ export default class Equalizer {
         let
             numChannels = this.mono ? 1 : 2;
 
-        return 24 + NUM_BANDS * 72
+        return 4 * (this.longWords ? 8 : 4) + 2 * 4 + NUM_BANDS * 72
             // alsaequals includes these bonus bytes in its length calculation, apparently erroneously,
             // because it never initialises them. But we have to match it for it to use the file:
             + numChannels * NUM_BANDS * 4;
@@ -79,39 +85,65 @@ export default class Equalizer {
 
         assert(preset && preset.length === NUM_BANDS);
 
+        /*
+            Header has this structure:
+
+            typedef struct LADSPA_Control_ {
+                unsigned long length;
+                unsigned long id;
+                unsigned long channels;
+                unsigned long num_controls;
+                int input_index;
+                int output_index;
+                LADSPA_Control_Data control[];
+            }
+         */
+
         let
             fileLen = this._calculateFileLength(),
-            buffer = new Uint32Array(fileLen / 4);
 
-        buffer[0] = fileLen;
-        buffer[1] = LADSPA_PLUGIN_EQ10; // Eq10 plugin's unique ID
-        buffer[2] = this.mono ? 1 : 2; // Num channels
-        buffer[3] = NUM_BANDS;
-        buffer[4] = NUM_BANDS; // Input index
-        buffer[5] = NUM_BANDS + 1; // Output index
+            buffer = new ArrayBuffer(fileLen),
 
-        let
-            cursor = HEADER_LEN_WORDS;
+            head = this.longWords ? new BigUint64Array(buffer, 0, 4) : new Uint32Array(buffer, 0, 4),
+            tail = new Uint32Array(buffer, head.byteLength, (fileLen - head.byteLength) / 4),
+
+            cursor = 0;
+
+        // First the variable-size words for the header:
+        for (let entry of [
+            fileLen,
+            LADSPA_PLUGIN_EQ10, // Eq10 plugin's unique ID
+            this.mono ? 1 : 2,  // Num channels
+            NUM_BANDS,
+        ]) {
+            head[cursor++] = this.longWords ? BigInt(entry) : entry;
+        }
+
+        // Then the rest which are always 32-bit:
+        cursor = 0;
+
+        tail[cursor++] = NUM_BANDS;     // Input index
+        tail[cursor++] = NUM_BANDS + 1; // Output index
 
         for (let i = 0; i < NUM_BANDS; i++) {
-            buffer[cursor++] = i; // Control index
+            tail[cursor++] = i; // Control index
 
             // Per-channel equaliser weights for the current band:
             for (let j = 0; j < NUM_CHANNELS; j++, cursor++) {
                 if (j <= 1) {
                     // L and R channels:
-                    buffer[cursor] = floatToUint32(preset[i]);
+                    tail[cursor] = floatToUint32(preset[i]);
                 } else {
                     // Other channels can be zero:
-                    buffer[cursor] = ZEROFASINT;
+                    tail[cursor] = ZEROFASINT;
                 }
             }
 
-            buffer[cursor++] = LADSPA_CNTRL_OUTPUT; // Control type
+            tail[cursor++] = LADSPA_CNTRL_OUTPUT; // Control type
         }
 
         fs.ftruncateSync(this.fd, fileLen); // Fix overlong files
-        fs.writeSync(this.fd, buffer, 0, fileLen, 0);
+        fs.writeSync(this.fd, Buffer.from(buffer), 0, fileLen, 0);
     }
 
 }
